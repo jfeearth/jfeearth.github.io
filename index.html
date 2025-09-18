@@ -231,11 +231,11 @@
                 <h2 class="view-title">Vokabeltrainer</h2>
                 <div id="vocab-lists-view">
                      <div class="gemini-feature-box">
-                         <h3>✨ Vokabelliste scannen (BETA)</h3>
+                          <h3>✨ Vokabelliste scannen (BETA)</h3>
                          <p>Lade ein Foto deiner Vokabelliste hoch. Die KI versucht, die Wörter zu extrahieren.</p>
-                         <input type="file" id="vocab-scan-input" accept="image/*">
-                         <button data-action="scan-vocab-list">📷 Scan starten</button>
-                         <div id="vocab-scan-feedback"></div>
+                          <input type="file" id="vocab-scan-input" accept="image/*">
+                          <button data-action="scan-vocab-list">📷 Scan starten</button>
+                          <div id="vocab-scan-feedback"></div>
                      </div>
                     <div id="vocab-lists-container"></div><button data-action="show-vocab-editor">Neue Liste manuell erstellen</button>
                 </div>
@@ -246,17 +246,17 @@
                         <label><input type="radio" name="vocab-list-type" value="spelling"> Rechtschreibung</label>
                     </div>
                      <div class="admin-form-group" style="justify-content: center;">
-                        <label for="vocab-lang-select">Sprache der Wörter:</label>
-                        <select id="vocab-lang-select">
-                            <option value="de-DE">Deutsch</option>
-                            <option value="en-US">Englisch (US)</option>
-                            <option value="en-GB">Englisch (UK)</option>
-                            <option value="fr-FR">Französisch</option>
-                            <option value="es-ES">Spanisch</option>
-                            <option value="it-IT">Italienisch</option>
-                            <option value="la">Latein</option>
-                        </select>
-                    </div>
+                         <label for="vocab-lang-select">Sprache der Wörter:</label>
+                         <select id="vocab-lang-select">
+                             <option value="de-DE">Deutsch</option>
+                             <option value="en-US">Englisch (US)</option>
+                             <option value="en-GB">Englisch (UK)</option>
+                             <option value="fr-FR">Französisch</option>
+                             <option value="es-ES">Spanisch</option>
+                             <option value="it-IT">Italienisch</option>
+                             <option value="la">Latein</option>
+                         </select>
+                     </div>
                     <input type="text" id="vocab-list-name" placeholder="Name der Liste (z.B. Englisch Unit 1)">
                     <div id="vocab-input-fields"></div>
                     <button data-action="add-vocab-pair">+ Weitere Vokabel hinzufügen</button>
@@ -464,11 +464,11 @@
                 closeAllModals();
             });
              document.addEventListener('keydown', (e) => {
-                if(dinoGame.active && e.code === 'Space') {
-                    e.preventDefault();
-                    dinoGame.jump();
-                }
-            });
+                 if(dinoGame.active && e.code === 'Space') {
+                     e.preventDefault();
+                     dinoGame.jump();
+                 }
+             });
             document.querySelectorAll('input[name="vocab-list-type"]').forEach(radio => {
                 radio.addEventListener('change', (e) => toggleVocabEditorMode(e.target.value));
             });
@@ -552,6 +552,7 @@
         async function checkRankUp() { const oldRank = userRank; if (userXp >= RANK_THRESHOLDS.Gold && userRank !== "Gold") { userRank = "Gold"; } else if (userXp >= RANK_THRESHOLDS.Silber && userRank === "Bronze") { userRank = "Silber"; } if (oldRank !== userRank) { setTimeout(() => showAlert(`Herzlichen Glückwunsch! Du hast den ${userRank}-Rang erreicht!`, 'Rangaufstieg'), 500); await saveUserData(); } }
 
         // === Streak Logic ===
+        function getISODateString(date) { return date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0'); }
         async function checkStreakOnLoad() {
             const today = new Date();
             const yesterday = new Date(today);
@@ -630,7 +631,7 @@
                     case 'addition': question = `${num1} + ${num2}`; answer = num1 + num2; break;
                     case 'subtraction': if (num1 < num2) [num1, num2] = [num2, num1]; question = `${num1} - ${num2}`; answer = num1 - num2; break;
                     case 'multiplication': num1 = Math.floor(Math.random() * (maxNum / 10)) + 1; num2 = Math.floor(Math.random() * 12) + 1; question = `${num1} × ${num2}`; answer = num1 * num2; break;
-                    case 'division': const divisor = Math.floor(Math.random() * (maxNum / 10 - 2)) + 2; answer = Math.floor(Math.random() * 15) + 2; const dividend = answer * divisor; question = `${dividend} ÷ ${divisor}`; break;
+                    case 'division': const divisor = Math.floor(Math.random() * (maxNum / 10 - 2)) + 2; answer = Math.floor(Math.random() * 15) + 2; const dividend = answer * divisor; question = `${dividend} ÷ ${divisor}`; answer = dividend / divisor; break;
                     case 'potenzen': num1 = Math.floor(Math.random() * 12) + 2; num2 = userRank === 'Bronze' ? 2 : (Math.random() > 0.5 ? 2:3); question = `${num1}²`; answer = Math.pow(num1, 2); if(num2 === 3) { question = `${num1}³`; answer = Math.pow(num1, 3); } break;
                     case 'fractions': { const d1 = Math.floor(Math.random() * 8) + 2; const n1 = Math.floor(Math.random() * d1) + 1; const d2 = Math.floor(Math.random() * 8) + 2; const n2 = Math.floor(Math.random() * d2) + 1; const simp1 = simplify(n1,d1); const simp2 = simplify(n2,d2); const commonD = simp1.d * simp2.d; const resN = simp1.n * simp2.d + simp2.n * simp1.d; const final = simplify(resN, commonD); question = `${simp1.n}/${simp1.d} + ${simp2.n}/${simp2.d}`; answer = `${final.n}/${final.d}`; break; }
                 }
