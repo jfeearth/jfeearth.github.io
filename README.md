@@ -720,53 +720,46 @@
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64Data = reader.result.split(',')[1];
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                // WICHTIG: Der API-Aufruf erfolgt jetzt über einen "Proxy".
+                // Du darfst den API-Schlüssel NIEMALS direkt hier im Code haben.
+                // Dieser Endpunkt '/api/scan-vocab' muss auf eine Serverless Function verweisen.
+                // Mehr dazu in der Erklärung unter dem Code.
+                const proxyApiUrl = '/api/scan-vocab'; 
 
                 const payload = {
-                    contents: [
-                        {
-                            parts: [
-                                { text: "Extrahiere die Vokabeln aus diesem Bild. Gib nur ein JSON-Array mit Objekten zurück, die die Schlüssel 'word' und 'translation' haben. Beispiel: [{'word': 'house', 'translation': 'Haus'}, {'word': 'mouse', 'translation': 'Maus'}]" },
-                                {
-                                    inlineData: {
-                                        mimeType: file.type,
-                                        data: base64Data
-                                    }
-                                }
-                            ]
-                        }
-                    ],
+                    mimeType: file.type,
+                    data: base64Data
                 };
 
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch(proxyApiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (!response.ok) throw new Error(`API-Fehler: ${response.statusText}`);
+
+                    if (!response.ok) {
+                         const errorText = await response.text();
+                         throw new Error(`Fehler vom Server: ${response.status} - ${errorText}`);
+                    }
                     
                     const result = await response.json();
-                    const text = result.candidates[0].content.parts[0].text;
-
-                    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```|(\[[\s\S]*\])/);
-                    if (!jsonMatch) throw new Error("Kein gültiges JSON in der Antwort gefunden.");
                     
-                    const jsonString = jsonMatch[1] || jsonMatch[2];
-                    const extractedVocabs = JSON.parse(jsonString);
+                    // Die Serverless Function sollte das bereinigte JSON direkt zurückgeben.
+                    const extractedVocabs = result.vocabs;
 
                     if (Array.isArray(extractedVocabs) && extractedVocabs.length > 0) {
-                        showVocabEditor();
+                        showVocabEditor(); // Editor-Ansicht öffnen
                         document.getElementById('vocab-list-name').value = `Gescannte Liste - ${new Date().toLocaleDateString()}`;
                         const fieldsContainer = document.getElementById('vocab-input-fields');
-                        fieldsContainer.innerHTML = '';
+                        fieldsContainer.innerHTML = ''; // Bestehende Felder leeren
                         extractedVocabs.forEach(pair => {
                             if(pair.word && pair.translation) addVocabPairInput(pair.word, pair.translation);
                         });
                           feedbackEl.innerHTML = `<p style="color:var(--success-color)">${extractedVocabs.length} Vokabeln gefunden und in den Editor geladen!</p>`;
                     } else {
-                        throw new Error("Keine Vokabeln gefunden.");
+                        throw new Error("Keine Vokabeln gefunden oder die Antwort war leer.");
                     }
                 } catch (error) {
                     console.error("Fehler bei der Vokabel-Erkennung:", error);
@@ -1083,4 +1076,5 @@
     </script>
 </body>
 </html>
+
 
