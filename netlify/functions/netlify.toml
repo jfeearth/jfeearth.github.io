@@ -1,0 +1,77 @@
+// netlify/functions/scan-vocab.js
+
+// Wichtig: Node-Fetch muss für den API-Aufruf auf dem Server genutzt werden
+const fetch = require('node-fetch');
+
+exports.handler = async function (event, context) {
+  // Nur POST-Anfragen erlauben
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  try {
+    const { mimeType, data } = JSON.parse(event.body);
+
+    // Hole den geheimen API-Schlüssel aus den Netlify Umgebungsvariablen
+    const apiKey = process.env.GOOGLE_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("API-Schlüssel nicht konfiguriert.");
+    }
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            { text: "Extrahiere die Vokabeln aus diesem Bild. Gib nur ein JSON-Array mit Objekten zurück, die die Schlüssel 'word' und 'translation' haben. Beispiel: [{'word': 'house', 'translation': 'Haus'}, {'word': 'mouse', 'translation': 'Maus'}]" },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: data
+              }
+            }
+          ]
+        }
+      ],
+    };
+
+    const googleResponse = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!googleResponse.ok) {
+      const errorText = await googleResponse.text();
+      console.error("Google API Error:", errorText);
+      return { statusCode: googleResponse.status, body: `Google API Error: ${errorText}` };
+    }
+
+    const result = await googleResponse.json();
+    const text = result.candidates[0].content.parts[0].text;
+
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```|(\[[\s\S]*\])/);
+    if (!jsonMatch) {
+        throw new Error("Kein gültiges JSON in der Antwort von Google gefunden.");
+    }
+
+    const jsonString = jsonMatch[1] || jsonMatch[2];
+    const extractedVocabs = JSON.parse(jsonString);
+
+    // Sende das Ergebnis als JSON zurück an die Webseite
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vocabs: extractedVocabs })
+    };
+
+  } catch (error) {
+    console.error('Fehler in der Serverless Function:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
+};
