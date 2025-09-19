@@ -15,6 +15,8 @@ exports.handler = async function(event, context) {
       throw new Error("API-Schlüssel ist nicht konfiguriert.");
     }
 
+    // Wir benötigen 'node-fetch', um die API auf dem Server aufzurufen.
+    // Netlify stellt dies in der Regel bereit.
     const fetch = (await import('node-fetch')).default;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${API_KEY}`;
     
@@ -43,6 +45,8 @@ exports.handler = async function(event, context) {
     
     const result = await response.json();
     const text = result.candidates[0].content.parts[0].text;
+    
+    // Bereinige den Text, um sicherzustellen, dass er nur das JSON-Array enthält
     const cleanedText = text.trim().replace(/```json/g, "").replace(/```/g, "").trim();
     const vocabs = JSON.parse(cleanedText);
 
@@ -55,6 +59,6 @@ exports.handler = async function(event, context) {
 
   } catch (error) {
     console.error("Fehler in der Netlify Function:", error);
-    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+    return { statusCode: 500, body: JSON.stringify({ error: "Interner Server Fehler in der Funktion." }) };
   }
 };
