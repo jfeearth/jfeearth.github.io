@@ -121,7 +121,7 @@
                 bottom: 0;
                 padding-top: 0;
             }
-            .sidebar-btn { margin: 0 !important; }
+            .sidebar-btn[title="Admin-Panel"] { margin: 0 !important; }
             main { margin-left: 0; padding: 1rem; }
             .points-container {
                 position: relative;
@@ -150,7 +150,7 @@
         <nav class="sidebar">
             <button data-hash="#learning-hub" class="sidebar-btn" title="Lernen">🧠</button>
             <button data-hash="#shop" class="sidebar-btn" title="Spielen">🎮</button>
-            <button id="admin-sidebar-btn" data-hash="#admin-panel" class="sidebar-btn hidden" title="Admin-Panel" style="margin-top: auto; margin-bottom: 20px;">🔧</button>
+            <button data-hash="#admin-login" class="sidebar-btn" title="Admin-Panel" style="margin-top: auto; margin-bottom: 20px;">🔧</button>
             <button data-action="logout" class="sidebar-btn" title="Ausloggen" style="margin-top: auto; margin-bottom: 20px;">🚪</button>
         </nav>
 
@@ -292,6 +292,7 @@
 
             <div id="game-container" class="view hidden"><button class="back-to-hub" data-action="back-to-shop">‹ Zurück zum Shop</button><div id="game-content"></div></div>
 
+            <div id="admin-login-view" class="view hidden"><button class="back-to-hub" data-hash="#learning-hub">‹ Zurück</button><h2 class="view-title">Admin-Login</h2><p>Bitte gib die PIN ein.</p><input type="password" id="admin-pin-input" placeholder="PIN"><button data-action="admin-login">Anmelden</button></div>
             <div id="admin-panel-view" class="view hidden">
                 <button class="back-to-hub" data-hash="#learning-hub">‹ Zurück</button><h2 class="view-title">Admin-Panel</h2>
                 <p>Hier kannst du die Nutzerdaten anpassen.</p>
@@ -373,7 +374,6 @@
         const db = getFirestore(app);
 
         // === App Zustand ===
-        const ADMIN_UID = "mmeoQQTBlOWEUhBLlJdwJg8z5VN2";
         let currentUser = null;
         let userPoints = 0, userXp = 0, userRank = "Bronze", userName = "", jsConfetti, userStreak = 0, lastActivityDate = null;
         let quizQuestions = [], currentQuestionIndex = 0, correctAnswersCount = 0;
@@ -396,7 +396,7 @@
         const routes = {
             '#auth': 'auth-view', '#learning-hub': 'learning-hub', '#shop': 'shop-module',
             '#math': 'math-module', '#german': 'german-module', '#vocabulary': 'vocabulary-module',
-            '#ranks': 'rank-info-view', '#admin-panel': 'admin-panel-view',
+            '#ranks': 'rank-info-view', '#admin-login': 'admin-login-view', '#admin-panel': 'admin-panel-view',
             '#game': 'game-container'
         };
 
@@ -411,19 +411,19 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // User is signed in.
                 currentUser = user;
                 await loadUserData();
                 showView('learning-hub');
                 updateSidebarActiveState('#learning-hub');
                 document.getElementById('points-container-wrapper').classList.remove('hidden');
-                document.getElementById('admin-sidebar-btn').classList.toggle('hidden', user.uid !== ADMIN_UID);
             } else {
+                // User is signed out.
                 currentUser = null;
                 resetLocalData();
                 showView('auth-view');
                 updateSidebarActiveState('#auth');
                 document.getElementById('points-container-wrapper').classList.add('hidden');
-                document.getElementById('admin-sidebar-btn').classList.add('hidden');
             }
         });
 
@@ -437,13 +437,6 @@
         }
         function showView(viewId) {
             stopAllActivities();
-
-            if (viewId === 'admin-panel-view' && (!currentUser || currentUser.uid !== ADMIN_UID)) {
-                showView('learning-hub');
-                window.location.hash = '#learning-hub';
-                return;
-            }
-
             allViews.forEach(view => view.classList.add("hidden"));
             const viewToShow = document.getElementById(viewId);
             if (viewToShow) viewToShow.classList.remove("hidden");
@@ -491,6 +484,7 @@
             if (activeEl.id === 'email-input' || activeEl.id === 'password-input') {
                 document.querySelector('[data-action="login"]').click();
             }
+            if (activeEl.id === 'admin-pin-input') document.querySelector('[data-action="admin-login"]').click(); 
             if (activeEl.id === 'math-answer') document.querySelector('[data-action="check-math-answer"]').click(); 
             if (activeEl.id === 'vocab-answer') document.querySelector('[data-action="check-vocab-answer"]').click(); 
             if (activeEl.id === 'guess-input') document.querySelector('[data-action="check-guess"]').click();
@@ -607,6 +601,7 @@
 
         // === Admin & User Setup ===
         function populateAdminPanel() { document.getElementById("admin-name-input").value = userName; document.getElementById("admin-points-input").value = userPoints; document.getElementById("admin-xp-input").value = userXp; document.getElementById("admin-rank-select").value = userRank; document.getElementById("admin-streak-input").value = userStreak; }
+        function handleAdminLogin() { if (document.getElementById("admin-pin-input").value === "6728") { window.location.hash = '#admin-panel'; } else { showAlert("Falsche PIN!"); } document.getElementById("admin-pin-input").value = ""; }
         async function handleAdminSetName() { userName = document.getElementById("admin-name-input").value.trim(); await saveUserData(); displayGreeting(); showAlert(`Name auf "${userName}" geändert.`); }
         async function handleSetPoints() { const val = parseInt(document.getElementById("admin-points-input").value, 10); if (!isNaN(val) && val >= 0) { userPoints = val; updateAllDisplays(); await saveUserData(); showAlert(`Punkte auf ${val} gesetzt.`); } }
         async function handleSetXp() { const val = parseInt(document.getElementById("admin-xp-input").value, 10); if (!isNaN(val) && val >= 0) { userXp = val; await checkRankUp(); updateAllDisplays(); await saveUserData(); showAlert(`XP auf ${val} gesetzt.`); } }
@@ -890,6 +885,7 @@
                     break;
                 }
                 case 'logout': await signOut(auth); break;
+                case 'admin-login': handleAdminLogin(); break;
                 case 'admin-set-name': await handleAdminSetName(); break;
                 case 'admin-set-points': await handleSetPoints(); break;
                 case 'admin-set-xp': await handleSetXp(); break;
@@ -974,4 +970,4 @@
     </script>
 </body>
 </html>
-
+```
