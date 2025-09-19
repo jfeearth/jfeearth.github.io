@@ -231,11 +231,11 @@
                 <h2 class="view-title">Vokabeltrainer</h2>
                 <div id="vocab-lists-view">
                      <div class="gemini-feature-box">
-                          <h3>✨ Vokabelliste scannen (BETA)</h3>
+                         <h3>✨ Vokabelliste scannen (BETA)</h3>
                          <p>Lade ein Foto deiner Vokabelliste hoch. Die KI versucht, die Wörter zu extrahieren.</p>
-                          <input type="file" id="vocab-scan-input" accept="image/*">
-                          <button data-action="scan-vocab-list">📷 Scan starten</button>
-                          <div id="vocab-scan-feedback"></div>
+                         <input type="file" id="vocab-scan-input" accept="image/*">
+                         <button data-action="scan-vocab-list">📷 Scan starten</button>
+                         <div id="vocab-scan-feedback"></div>
                      </div>
                     <div id="vocab-lists-container"></div><button data-action="show-vocab-editor">Neue Liste manuell erstellen</button>
                 </div>
@@ -246,17 +246,17 @@
                         <label><input type="radio" name="vocab-list-type" value="spelling"> Rechtschreibung</label>
                     </div>
                      <div class="admin-form-group" style="justify-content: center;">
-                         <label for="vocab-lang-select">Sprache der Wörter:</label>
-                         <select id="vocab-lang-select">
-                             <option value="de-DE">Deutsch</option>
-                             <option value="en-US">Englisch (US)</option>
-                             <option value="en-GB">Englisch (UK)</option>
-                             <option value="fr-FR">Französisch</option>
-                             <option value="es-ES">Spanisch</option>
-                             <option value="it-IT">Italienisch</option>
-                             <option value="la">Latein</option>
-                         </select>
-                     </div>
+                        <label for="vocab-lang-select">Sprache der Wörter:</label>
+                        <select id="vocab-lang-select">
+                            <option value="de-DE">Deutsch</option>
+                            <option value="en-US">Englisch (US)</option>
+                            <option value="en-GB">Englisch (UK)</option>
+                            <option value="fr-FR">Französisch</option>
+                            <option value="es-ES">Spanisch</option>
+                            <option value="it-IT">Italienisch</option>
+                            <option value="la">Latein</option>
+                        </select>
+                    </div>
                     <input type="text" id="vocab-list-name" placeholder="Name der Liste (z.B. Englisch Unit 1)">
                     <div id="vocab-input-fields"></div>
                     <button data-action="add-vocab-pair">+ Weitere Vokabel hinzufügen</button>
@@ -464,11 +464,11 @@
                 closeAllModals();
             });
              document.addEventListener('keydown', (e) => {
-                 if(dinoGame.active && e.code === 'Space') {
-                     e.preventDefault();
-                     dinoGame.jump();
-                 }
-             });
+                if(dinoGame.active && e.code === 'Space') {
+                    e.preventDefault();
+                    dinoGame.jump();
+                }
+            });
             document.querySelectorAll('input[name="vocab-list-type"]').forEach(radio => {
                 radio.addEventListener('change', (e) => toggleVocabEditorMode(e.target.value));
             });
@@ -552,7 +552,6 @@
         async function checkRankUp() { const oldRank = userRank; if (userXp >= RANK_THRESHOLDS.Gold && userRank !== "Gold") { userRank = "Gold"; } else if (userXp >= RANK_THRESHOLDS.Silber && userRank === "Bronze") { userRank = "Silber"; } if (oldRank !== userRank) { setTimeout(() => showAlert(`Herzlichen Glückwunsch! Du hast den ${userRank}-Rang erreicht!`, 'Rangaufstieg'), 500); await saveUserData(); } }
 
         // === Streak Logic ===
-        function getISODateString(date) { return date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0'); }
         async function checkStreakOnLoad() {
             const today = new Date();
             const yesterday = new Date(today);
@@ -776,16 +775,9 @@
         }
         function initDinoRun() {
             const gameContent = document.getElementById('game-content');
-            gameContent.innerHTML = `<h3>Dino Run</h3><p>Drücke die Leertaste oder klicke/tippe zum Springen!</p><canvas id="dino-canvas" width="600" height="200"></canvas><button class="game-restart-btn" data-action="buy-game" data-game="dino-run" data-cost="15">Neustart</button>`;
+            gameContent.innerHTML = `<h3>Dino Run</h3><p>Drücke die Leertaste zum Springen!</p><canvas id="dino-canvas" width="600" height="200"></canvas><button class="game-restart-btn" data-action="buy-game" data-game="dino-run" data-cost="15">Neustart</button>`;
             const canvas = document.getElementById('dino-canvas');
             const ctx = canvas.getContext('2d');
-            
-            canvas.addEventListener('click', () => { if(dinoGame.active) dinoGame.jump(); });
-            canvas.addEventListener('touchstart', (e) => { 
-                e.preventDefault();
-                if(dinoGame.active) dinoGame.jump(); 
-            });
-
             dinoGame = {
                 active: true, player: { x: 50, y: 150, width: 20, height: 50, dy: 0, gravity: 0.8, jumpPower: -15, onGround: true }, obstacles: [], score: 0, frame: 0, speed: 4, speedIncrement: 0.001,
                 jump() { if (this.player.onGround) { this.player.dy = this.player.jumpPower; this.player.onGround = false; } },
@@ -970,4 +962,3 @@
     </script>
 </body>
 </html>
-```
