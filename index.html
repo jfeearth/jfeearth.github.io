@@ -121,7 +121,7 @@
                 bottom: 0;
                 padding-top: 0;
             }
-            .sidebar-btn[title="Admin-Panel"] { margin: 0 !important; }
+            .sidebar-btn { margin: 0 !important; }
             main { margin-left: 0; padding: 1rem; }
             .points-container {
                 position: relative;
@@ -150,7 +150,7 @@
         <nav class="sidebar">
             <button data-hash="#learning-hub" class="sidebar-btn" title="Lernen">🧠</button>
             <button data-hash="#shop" class="sidebar-btn" title="Spielen">🎮</button>
-            <button data-hash="#admin-login" class="sidebar-btn" title="Admin-Panel" style="margin-top: auto; margin-bottom: 20px;">🔧</button>
+            <button id="admin-sidebar-btn" data-hash="#admin-panel" class="sidebar-btn hidden" title="Admin-Panel" style="margin-top: auto; margin-bottom: 20px;">🔧</button>
             <button data-action="logout" class="sidebar-btn" title="Ausloggen" style="margin-top: auto; margin-bottom: 20px;">🚪</button>
         </nav>
 
@@ -292,7 +292,6 @@
 
             <div id="game-container" class="view hidden"><button class="back-to-hub" data-action="back-to-shop">‹ Zurück zum Shop</button><div id="game-content"></div></div>
 
-            <div id="admin-login-view" class="view hidden"><button class="back-to-hub" data-hash="#learning-hub">‹ Zurück</button><h2 class="view-title">Admin-Login</h2><p>Bitte gib die PIN ein.</p><input type="password" id="admin-pin-input" placeholder="PIN"><button data-action="admin-login">Anmelden</button></div>
             <div id="admin-panel-view" class="view hidden">
                 <button class="back-to-hub" data-hash="#learning-hub">‹ Zurück</button><h2 class="view-title">Admin-Panel</h2>
                 <p>Hier kannst du die Nutzerdaten anpassen.</p>
@@ -374,6 +373,7 @@
         const db = getFirestore(app);
 
         // === App Zustand ===
+        const ADMIN_UID = "mmeoQQTBlOWEUhBLlJdwJg8z5VN2";
         let currentUser = null;
         let userPoints = 0, userXp = 0, userRank = "Bronze", userName = "", jsConfetti, userStreak = 0, lastActivityDate = null;
         let quizQuestions = [], currentQuestionIndex = 0, correctAnswersCount = 0;
@@ -396,7 +396,7 @@
         const routes = {
             '#auth': 'auth-view', '#learning-hub': 'learning-hub', '#shop': 'shop-module',
             '#math': 'math-module', '#german': 'german-module', '#vocabulary': 'vocabulary-module',
-            '#ranks': 'rank-info-view', '#admin-login': 'admin-login-view', '#admin-panel': 'admin-panel-view',
+            '#ranks': 'rank-info-view', '#admin-panel': 'admin-panel-view',
             '#game': 'game-container'
         };
 
@@ -411,19 +411,19 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in.
                 currentUser = user;
                 await loadUserData();
                 showView('learning-hub');
                 updateSidebarActiveState('#learning-hub');
                 document.getElementById('points-container-wrapper').classList.remove('hidden');
+                document.getElementById('admin-sidebar-btn').classList.toggle('hidden', user.uid !== ADMIN_UID);
             } else {
-                // User is signed out.
                 currentUser = null;
                 resetLocalData();
                 showView('auth-view');
                 updateSidebarActiveState('#auth');
                 document.getElementById('points-container-wrapper').classList.add('hidden');
+                document.getElementById('admin-sidebar-btn').classList.add('hidden');
             }
         });
 
@@ -437,6 +437,13 @@
         }
         function showView(viewId) {
             stopAllActivities();
+
+            if (viewId === 'admin-panel-view' && (!currentUser || currentUser.uid !== ADMIN_UID)) {
+                showView('learning-hub');
+                window.location.hash = '#learning-hub';
+                return;
+            }
+
             allViews.forEach(view => view.classList.add("hidden"));
             const viewToShow = document.getElementById(viewId);
             if (viewToShow) viewToShow.classList.remove("hidden");
@@ -484,7 +491,6 @@
             if (activeEl.id === 'email-input' || activeEl.id === 'password-input') {
                 document.querySelector('[data-action="login"]').click();
             }
-            if (activeEl.id === 'admin-pin-input') document.querySelector('[data-action="admin-login"]').click(); 
             if (activeEl.id === 'math-answer') document.querySelector('[data-action="check-math-answer"]').click(); 
             if (activeEl.id === 'vocab-answer') document.querySelector('[data-action="check-vocab-answer"]').click(); 
             if (activeEl.id === 'guess-input') document.querySelector('[data-action="check-guess"]').click();
@@ -601,7 +607,6 @@
 
         // === Admin & User Setup ===
         function populateAdminPanel() { document.getElementById("admin-name-input").value = userName; document.getElementById("admin-points-input").value = userPoints; document.getElementById("admin-xp-input").value = userXp; document.getElementById("admin-rank-select").value = userRank; document.getElementById("admin-streak-input").value = userStreak; }
-        function handleAdminLogin() { if (document.getElementById("admin-pin-input").value === "6728") { window.location.hash = '#admin-panel'; } else { showAlert("Falsche PIN!"); } document.getElementById("admin-pin-input").value = ""; }
         async function handleAdminSetName() { userName = document.getElementById("admin-name-input").value.trim(); await saveUserData(); displayGreeting(); showAlert(`Name auf "${userName}" geändert.`); }
         async function handleSetPoints() { const val = parseInt(document.getElementById("admin-points-input").value, 10); if (!isNaN(val) && val >= 0) { userPoints = val; updateAllDisplays(); await saveUserData(); showAlert(`Punkte auf ${val} gesetzt.`); } }
         async function handleSetXp() { const val = parseInt(document.getElementById("admin-xp-input").value, 10); if (!isNaN(val) && val >= 0) { userXp = val; await checkRankUp(); updateAllDisplays(); await saveUserData(); showAlert(`XP auf ${val} gesetzt.`); } }
@@ -631,7 +636,7 @@
                     case 'addition': question = `${num1} + ${num2}`; answer = num1 + num2; break;
                     case 'subtraction': if (num1 < num2) [num1, num2] = [num2, num1]; question = `${num1} - ${num2}`; answer = num1 - num2; break;
                     case 'multiplication': num1 = Math.floor(Math.random() * (maxNum / 10)) + 1; num2 = Math.floor(Math.random() * 12) + 1; question = `${num1} × ${num2}`; answer = num1 * num2; break;
-                    case 'division': const divisor = Math.floor(Math.random() * (maxNum / 10 - 2)) + 2; answer = Math.floor(Math.random() * 15) + 2; const dividend = answer * divisor; question = `${dividend} ÷ ${divisor}`; answer = dividend / divisor; break;
+                    case 'division': const divisor = Math.floor(Math.random() * (maxNum / 10 - 2)) + 2; answer = Math.floor(Math.random() * 15) + 2; const dividend = answer * divisor; question = `${dividend} ÷ ${divisor}`; break;
                     case 'potenzen': num1 = Math.floor(Math.random() * 12) + 2; num2 = userRank === 'Bronze' ? 2 : (Math.random() > 0.5 ? 2:3); question = `${num1}²`; answer = Math.pow(num1, 2); if(num2 === 3) { question = `${num1}³`; answer = Math.pow(num1, 3); } break;
                     case 'fractions': { const d1 = Math.floor(Math.random() * 8) + 2; const n1 = Math.floor(Math.random() * d1) + 1; const d2 = Math.floor(Math.random() * 8) + 2; const n2 = Math.floor(Math.random() * d2) + 1; const simp1 = simplify(n1,d1); const simp2 = simplify(n2,d2); const commonD = simp1.d * simp2.d; const resN = simp1.n * simp2.d + simp2.n * simp1.d; const final = simplify(resN, commonD); question = `${simp1.n}/${simp1.d} + ${simp2.n}/${simp2.d}`; answer = `${final.n}/${final.d}`; break; }
                 }
@@ -776,9 +781,16 @@
         }
         function initDinoRun() {
             const gameContent = document.getElementById('game-content');
-            gameContent.innerHTML = `<h3>Dino Run</h3><p>Drücke die Leertaste zum Springen!</p><canvas id="dino-canvas" width="600" height="200"></canvas><button class="game-restart-btn" data-action="buy-game" data-game="dino-run" data-cost="15">Neustart</button>`;
+            gameContent.innerHTML = `<h3>Dino Run</h3><p>Drücke die Leertaste oder klicke/tippe zum Springen!</p><canvas id="dino-canvas" width="600" height="200"></canvas><button class="game-restart-btn" data-action="buy-game" data-game="dino-run" data-cost="15">Neustart</button>`;
             const canvas = document.getElementById('dino-canvas');
             const ctx = canvas.getContext('2d');
+            
+            canvas.addEventListener('click', () => { if(dinoGame.active) dinoGame.jump(); });
+            canvas.addEventListener('touchstart', (e) => { 
+                e.preventDefault();
+                if(dinoGame.active) dinoGame.jump(); 
+            });
+
             dinoGame = {
                 active: true, player: { x: 50, y: 150, width: 20, height: 50, dy: 0, gravity: 0.8, jumpPower: -15, onGround: true }, obstacles: [], score: 0, frame: 0, speed: 4, speedIncrement: 0.001,
                 jump() { if (this.player.onGround) { this.player.dy = this.player.jumpPower; this.player.onGround = false; } },
@@ -878,7 +890,6 @@
                     break;
                 }
                 case 'logout': await signOut(auth); break;
-                case 'admin-login': handleAdminLogin(); break;
                 case 'admin-set-name': await handleAdminSetName(); break;
                 case 'admin-set-points': await handleSetPoints(); break;
                 case 'admin-set-xp': await handleSetXp(); break;
